@@ -1,0 +1,15 @@
+:root {
+    --return-transition-length: 200ms;
+}
+
+
+.drag-n-drop__draggable_pseudo {
+    position: absolute;
+
+    width: min-content;
+}
+
+
+.drag-n-drop__draggable_pseudo.returning {
+    transition: top var(--return-transition-length), left var(--return-transition-length);
+}
