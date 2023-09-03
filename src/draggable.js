@@ -81,7 +81,12 @@
 
             if(obj !== document.documentElement) return {width: obj.offsetWidth, height: obj.offsetHeight, x: obj.offsetLeft, y: obj.offsetTop};
         }
-        return {width: window.innerWidth, height: window.innerHeight, x: 0, y: 0};
+        return {
+            width: Math.max(window.innerWidth, document.documentElement.innerWidth),
+            height: Math.max(window.innerHeight, document.documentElement.innerHeight),
+            x: 0,
+            y: 0
+        };
     }
 
     async function get_collisions(objXStart, objXEnd, objYStart, objYEnd) {
@@ -256,7 +261,5 @@
     document.addEventListener('mousedown', on_click_start);
     document.addEventListener('mousemove', on_click_drag);
     document.addEventListener('mouseup', on_click_end);
-
-    drag_n_drop.get_draggable_element = get_draggable_element;
 
 }(window.drag_n_drop = window.drag_n_drop || {}));
