@@ -17,6 +17,12 @@
 
     <div id="dropzone" style="background: yellow; width: 50px; height: 50px" drag-n-drop="dropzone"></div>
 
+    <div id="container" style="background: black; width: 100px; height: 100px" drag-n-drop="container">
+        <div style="background: red; width: 50px; height: 50px" drag-n-drop="draggable">Hi</div>
+        <div style="background: blue; width: 50px; height: 50px" drag-n-drop="draggable" drag-n-drop-placeholder="false">Hello</div>
+        <div style="background: green; width: 50px; height: 50px" drag-n-drop="draggable">No</div>
+    </div>
+
 
     <script>
         var dz = document.getElementById("dropzone");
@@ -34,6 +40,7 @@
             console.log("Hello2")
             evt.currentTarget.innerText = evt.detail.object.innerText;
             evt.target.style.background = "yellow";
+            evt.preventDefault();
         });
     </script>
 </body>
