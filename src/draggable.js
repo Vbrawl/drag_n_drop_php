@@ -1,13 +1,22 @@
 
 (function(drag_n_drop, undefined) {
 
-    // drag-n-drop = "false|draggable" => false: disabled, draggable: Object can be dragged by the user. (When this option is used, the object can also receive dropzone events such as drag-n-drop__drop)
-    // drag-n-drop-lock-axis = "|x|y" => "": disabled, x: lock X axis, y: lock Y axis.
-    // drag-n-drop-x-padding = "<num>" => A number representing a padding (in pixels) before detecting a collision;
-    // drag-n-drop-y-padding = "<num>" => A number representing a padding (in pixels) before detecting a collision;
+    /**
+     * drag-n-drop = "false|draggable|dropzone|container" =>
+     *      false(DEFAULT): disabled.
+     *      draggable: Object can be dragged by the user. (When this option is used, the object can also receive dropzone events such as drag-n-drop__drop).
+     *      dropzone: Object only receives dropzone events (such as drag-n-drop__drop).
+     *      container: Object doesn't allow any items inside it to move out of it's boundaries.
+     */
+
+    // drag-n-drop-lock-axis = "|x|y" => ""(DEFAULT): disabled, x: lock X axis, y: lock Y axis.
+    // drag-n-drop-x-padding = "<num>" => A number representing a padding (in pixels) before detecting a collision. (Default: 0)
+    // drag-n-drop-y-padding = "<num>" => A number representing a padding (in pixels) before detecting a collision. (Default: 0)
+    // drag-n-drop-placeholder = "false" => "false": disable placeholder, "<any other value>"(DEFAULT): Enable placeholder
 
     var placeholder = null;
     var being_dragged = null;
+    var container = null;
     var dragged_over = [];
     const return_transition_length = 200; // ms
 
@@ -63,6 +72,17 @@
         return null;
     }
 
+    function get_container_object(obj) {
+        if(obj) {
+            while(obj.getAttribute('drag-n-drop') !== 'container' && obj !== document.documentElement) {
+                obj = obj.parentElement;
+            }
+
+            if(obj !== document.documentElement) return {width: obj.offsetWidth, height: obj.offsetHeight, x: obj.offsetLeft, y: obj.offsetTop};
+        }
+        return {width: window.innerWidth, height: window.innerHeight, x: 0, y: 0};
+    }
+
     async function get_collisions(objXStart, objXEnd, objYStart, objYEnd) {
         var collision_enabled_objects = document.querySelectorAll('*[drag-n-drop]:not([drag-n-drop="false"])');
         var collisions = [];
@@ -87,35 +107,28 @@
 
 
     async function on_click_start(evt) {
-        var draggable_object = get_draggable_element(evt.target);
+        const draggable_object = get_draggable_element(evt.target);
         if(draggable_object) {
             evt.preventDefault();
 
-            var drag_start_event = create_on_drag_start_event();
+            const drag_start_event = create_on_drag_start_event();
             draggable_object.dispatchEvent(drag_start_event);
 
             if(!drag_start_event.defaultPrevented) {
-                var parent = draggable_object.parentElement;
-                var parentIsDraggablePseudo = parent.classList.contains('drag-n-drop__draggable_pseudo');
+                const parent = draggable_object.parentElement;
 
-                if(parentIsDraggablePseudo) {
-                    var objX = parent.offsetLeft;
-                    var objY = parent.offsetTop;
-                } else {
-                    var objX = draggable_object.offsetLeft;
-                    var objY = draggable_object.offsetTop;
-                }
-
-                var clickX = evt.pageX;
-                var clickY = evt.pageY;
-
-                if(parentIsDraggablePseudo) {
-                    parent.setAttribute('offset-x', objX - clickX);
-                    parent.setAttribute('offset-y', objY - clickY);
+                if(parent.classList.contains('drag-n-drop__draggable_pseudo')) {
+                    parent.setAttribute('offset-x', parent.offsetLeft - evt.pageX);
+                    parent.setAttribute('offset-y', parent.offsetTop - evt.pageY);
                     being_dragged = parent;
+                    container = get_container_object(being_dragged);
                 } else {
-                    placeholder = await create_placeholder(draggable_object);
-                    being_dragged = await create_draggable_pseudo(draggable_object, objX, objY, clickX, clickY);
+                    const objX = draggable_object.offsetLeft;
+                    const objY = draggable_object.offsetTop;
+
+                    container = get_container_object(draggable_object);
+                    placeholder = await create_placeholder(draggable_object, draggable_object.getAttribute('drag-n-drop-placeholder') !== 'false');
+                    being_dragged = await create_draggable_pseudo(draggable_object, objX, objY, evt.pageX, evt.pageY);
                 }
             }
         }
@@ -163,12 +176,13 @@
     async function on_click_drag_calculate_axis(evt, axis, locked) {
         if(locked) return (axis === 'x' ? being_dragged.offsetLeft : being_dragged.offsetTop);
 
-        var offset = parseInt(being_dragged.getAttribute('offset-' + axis));
-        var document_length = (axis === 'x') ? Math.max(window.innerWidth, document.documentElement.offsetWidth) - being_dragged.offsetWidth : Math.max(window.innerHeight, document.documentElement.offsetHeight) - being_dragged.offsetHeight;
+        const offset = parseInt(being_dragged.getAttribute('offset-' + axis));
+        const document_start = (axis === 'x') ? container.x : container.y;
+        const document_length = (axis === 'x') ? container.x + container.width - being_dragged.offsetWidth : container.y + container.height - being_dragged.offsetHeight;
         var position = (axis === 'x' ? evt.pageX : evt.pageY) + offset;
 
-        if(position < 0) {
-            position = 0;
+        if(position < document_start) {
+            position = document_start;
         } else if (position > document_length) {
             position = document_length;
         }
@@ -181,9 +195,8 @@
         const placeholder_obj = placeholder;
         being_dragged = null;
         placeholder = null;
+        container = null;
         dragged_over = [];
-
-        console.log(draggable_pseudo);
 
         if(draggable_pseudo) {
             const drag_end_event = create_on_drag_end_event(draggable_pseudo, placeholder_obj);
@@ -197,8 +210,8 @@
 
             if(!drag_end_event.defaultPrevented && !drop_event.defaultPrevented) {
                 draggable_pseudo.classList.add('returning');
-                draggable_pseudo.style.top = placeholder_obj.offsetTop + 'px';
-                draggable_pseudo.style.left = placeholder_obj.offsetLeft + 'px';
+                draggable_pseudo.style.top = placeholder_obj.style.top;
+                draggable_pseudo.style.left = placeholder_obj.style.left;
                 setTimeout(() => {
                     var parent = placeholder_obj.parentElement;
                     parent.insertBefore(draggable_pseudo.children[0], placeholder_obj);
@@ -209,12 +222,14 @@
         }
     }
 
-    async function create_placeholder(obj) {
+    async function create_placeholder(obj, display) {
         var placeholder = document.createElement('div');
         placeholder.style.width = obj.offsetWidth + 'px';
         placeholder.style.height = obj.offsetHeight + 'px';
         placeholder.style.left = obj.offsetLeft + 'px';
         placeholder.style.top = obj.offsetTop + 'px';
+
+        if(!display) placeholder.style.display = "none";
 
         obj.parentElement.insertBefore(placeholder, obj);
         return placeholder;
