@@ -18,6 +18,7 @@
     var being_dragged = null;
     var container = null;
     var dragged_over = [];
+    var placeholder_id = 0;
     const return_transition_length = 200; // ms
 
     /* Drag action starts */
@@ -122,13 +123,14 @@
                     parent.setAttribute('offset-y', parent.offsetTop - evt.pageY);
                     being_dragged = parent;
                     container = get_container_object(being_dragged);
+                    placeholder = document.querySelector('div.drag-n-drop__placeholder[placeholder-id="'+parent.getAttribute('placeholder-id')+'"]');
                 } else {
                     const objX = draggable_object.offsetLeft;
                     const objY = draggable_object.offsetTop;
 
                     container = get_container_object(draggable_object);
                     placeholder = await create_placeholder(draggable_object, draggable_object.getAttribute('drag-n-drop-placeholder') !== 'false');
-                    being_dragged = await create_draggable_pseudo(draggable_object, objX, objY, evt.pageX, evt.pageY);
+                    being_dragged = await create_draggable_pseudo(draggable_object, objX, objY, evt.pageX, evt.pageY, placeholder_id-1);
                 }
             }
         }
@@ -224,6 +226,8 @@
 
     async function create_placeholder(obj, display) {
         var placeholder = document.createElement('div');
+        placeholder.classList.add('drag-n-drop__placeholder');
+        placeholder.setAttribute('placeholder-id', placeholder_id++);
         placeholder.style.width = obj.offsetWidth + 'px';
         placeholder.style.height = obj.offsetHeight + 'px';
         placeholder.style.left = obj.offsetLeft + 'px';
@@ -235,12 +239,13 @@
         return placeholder;
     }
 
-    async function create_draggable_pseudo(obj, objX, objY, clickX, clickY) {
+    async function create_draggable_pseudo(obj, objX, objY, clickX, clickY, link_placeholder_id) {
         var draggable_pseudo = document.createElement('div');
         draggable_pseudo.classList.add("drag-n-drop__draggable_pseudo");
         draggable_pseudo.appendChild(obj);
         draggable_pseudo.setAttribute('offset-x', objX - clickX);
         draggable_pseudo.setAttribute('offset-y', objY - clickY);
+        draggable_pseudo.setAttribute('placeholder-id', link_placeholder_id);
         draggable_pseudo.style.left = objX + 'px';
         draggable_pseudo.style.top = objY + 'px';
 
