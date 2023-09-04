@@ -95,6 +95,8 @@
 
         for (let i = 0; i < collision_enabled_objects.length; i++) {
             const colenobj = collision_enabled_objects[i];
+            if(colenobj.parentElement.classList.contains('drag-n-drop__draggable_pseudo'))
+                continue;
             const colXPadding = parseInt(colenobj.getAttribute('drag-n-drop-x-padding')) || 0;
             const colYPadding = parseInt(colenobj.getAttribute('drag-n-drop-y-padding')) || 0;
 
