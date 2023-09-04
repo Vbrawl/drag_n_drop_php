@@ -218,9 +218,11 @@
             }
 
             if(!drag_end_event.defaultPrevented && !drop_event.defaultPrevented) {
+                const placeholder_display = placeholder_obj.getAttribute('drag-n-drop-placeholder') !== 'false';
+
                 draggable_pseudo.classList.add('returning');
-                draggable_pseudo.style.top = placeholder_obj.style.top;
-                draggable_pseudo.style.left = placeholder_obj.style.left;
+                draggable_pseudo.style.top = (placeholder_display) ? placeholder_obj.offsetTop + 'px' : placeholder_obj.style.top;
+                draggable_pseudo.style.left = (placeholder_display) ? placeholder_obj.offsetLeft + 'px' : placeholder_obj.style.left;
                 setTimeout(() => {
                     var parent = placeholder_obj.parentElement;
                     parent.insertBefore(draggable_pseudo.children[0], placeholder_obj);
@@ -235,12 +237,11 @@
         var placeholder = document.createElement('div');
         placeholder.classList.add('drag-n-drop__placeholder');
         placeholder.setAttribute('placeholder-id', placeholder_id++);
+        placeholder.setAttribute('drag-n-drop-placeholder', display);
         placeholder.style.width = obj.offsetWidth + 'px';
         placeholder.style.height = obj.offsetHeight + 'px';
         placeholder.style.left = obj.offsetLeft + 'px';
         placeholder.style.top = obj.offsetTop + 'px';
-
-        if(!display) placeholder.style.display = "none";
 
         obj.parentElement.insertBefore(placeholder, obj);
         return placeholder;
