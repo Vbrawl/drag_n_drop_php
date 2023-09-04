@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="/src/draggable.css"> -->
 </head>
 <body>
-    <div style="background: red; width: 50px; height: 50px" drag-n-drop="draggable" drag-n-drop-lock-axis="x">Hi</div>
+    <div id="drag1" style="background: red; width: 50px; height: 50px" drag-n-drop="draggable" drag-n-drop-lock-axis="x" drag-n-drop-placeholder="false">Hi</div>
     <div style="background: blue; width: 50px; height: 50px" drag-n-drop="draggable" drag-n-drop-lock-axis="x">Hello</div>
     <div style="background: green; width: 50px; height: 50px" drag-n-drop="draggable" drag-n-drop-lock-axis="x">No</div>
 
@@ -26,10 +26,15 @@
 
     <script>
         var dz = document.getElementById("dropzone");
+        var drag1 = document.getElementById("drag1");
 
         dz.addEventListener('drag-n-drop__drag-enter', (evt) => {
             evt.target.style.background = "purple";
             console.log("Hello");
+        });
+
+        drag1.addEventListener('drag-n-drop__drag-enter', (evt) => {
+            console.log(evt);
         })
 
         dz.addEventListener('drag-n-drop__drag-exit', (evt) => {
