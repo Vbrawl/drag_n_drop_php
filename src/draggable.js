@@ -19,7 +19,9 @@
     var container = null;
     var dragged_over = [];
     var placeholder_id = 0;
+    var touch_timer = null;
     const return_transition_length = 200; // ms
+    const long_touch_length = 750; // ms
 
     /* Drag action starts */
     function create_on_drag_start_event() {
@@ -60,6 +62,9 @@
 
 
 
+    function get_pointer_coordinates(evt) {
+        return (evt.type.startsWith("touch") ? {pageX: evt.changedTouches[0].pageX, pageY: evt.changedTouches[0].pageY} : {pageX: evt.pageX, pageY: evt.pageY});
+    }
 
 
     function get_draggable_element(obj) {
@@ -113,8 +118,11 @@
         return collisions;
     }
 
+    async function on_touch_start(evt) {
+        touch_timer = setTimeout(() => {on_start(evt);}, long_touch_length);
+    }
 
-    async function on_click_start(evt) {
+    async function on_start(evt) {
         const draggable_object = get_draggable_element(evt.target);
         if(draggable_object) {
             evt.preventDefault();
@@ -124,10 +132,11 @@
 
             if(!drag_start_event.defaultPrevented) {
                 const parent = draggable_object.parentElement;
+                const coords = get_pointer_coordinates(evt);
 
                 if(parent.classList.contains('drag-n-drop__draggable_pseudo')) {
-                    parent.setAttribute('offset-x', parent.offsetLeft - evt.pageX);
-                    parent.setAttribute('offset-y', parent.offsetTop - evt.pageY);
+                    parent.setAttribute('offset-x', parent.offsetLeft - coords.pageX);
+                    parent.setAttribute('offset-y', parent.offsetTop - coords.pageY);
                     being_dragged = parent;
                     container = get_container_object(being_dragged);
                     placeholder = document.querySelector('div.drag-n-drop__placeholder[placeholder-id="'+parent.getAttribute('placeholder-id')+'"]');
@@ -137,18 +146,19 @@
 
                     container = get_container_object(draggable_object);
                     placeholder = await create_placeholder(draggable_object, draggable_object.getAttribute('drag-n-drop-placeholder') !== 'false');
-                    being_dragged = await create_draggable_pseudo(draggable_object, objX, objY, evt.pageX, evt.pageY, placeholder_id-1);
+                    being_dragged = await create_draggable_pseudo(draggable_object, objX, objY, coords.pageX, coords.pageY, placeholder_id-1);
                 }
             }
         }
     }
 
-    async function on_click_drag(evt) {
+    async function on_drag(evt) {
         if(being_dragged) {
+            evt.preventDefault();
             const locked_axis = being_dragged.children[0].getAttribute('drag-n-drop-lock-axis');
 
-            const objXStart = await on_click_drag_calculate_axis(evt, 'x', locked_axis === 'x');
-            const objYStart = await on_click_drag_calculate_axis(evt, 'y', locked_axis === 'y');
+            const objXStart = await on_drag_calculate_axis(evt, 'x', locked_axis === 'x');
+            const objYStart = await on_drag_calculate_axis(evt, 'y', locked_axis === 'y');
             const objXEnd = objXStart + being_dragged.offsetWidth;
             const objYEnd = objYStart + being_dragged.offsetHeight;
 
@@ -174,7 +184,6 @@
                 collisions[i].dispatchEvent(drag_over_event);
             }
 
-
             if(!drag_event.defaultPrevented && !drag_over_event.defaultPrevented && !drag_enter_event.defaultPrevented && !drag_exit_event.defaultPrevented) {
                 being_dragged.style.left = objXStart + 'px';
                 being_dragged.style.top = objYStart + 'px';
@@ -182,13 +191,14 @@
         }
     }
 
-    async function on_click_drag_calculate_axis(evt, axis, locked) {
+    async function on_drag_calculate_axis(evt, axis, locked) {
         if(locked) return (axis === 'x' ? being_dragged.offsetLeft : being_dragged.offsetTop);
 
         const offset = parseInt(being_dragged.getAttribute('offset-' + axis));
         const document_start = (axis === 'x') ? container.x : container.y;
         const document_length = (axis === 'x') ? container.x + container.width - being_dragged.offsetWidth : container.y + container.height - being_dragged.offsetHeight;
-        var position = (axis === 'x' ? evt.pageX : evt.pageY) + offset;
+        const coords = get_pointer_coordinates(evt);
+        var position = offset + (axis === 'x' ? coords.pageX : coords.pageY);
 
         if(position < document_start) {
             position = document_start;
@@ -199,7 +209,12 @@
         return position;
     }
 
-    async function on_click_end(evt) {
+    async function on_end(evt) {
+        if(touch_timer) {
+            clearTimeout(touch_timer);
+            touch_timer = null;
+        }
+
         const draggable_pseudo = being_dragged;
         const placeholder_obj = placeholder;
         being_dragged = null;
@@ -261,8 +276,11 @@
         return draggable_pseudo;
     }
 
-    document.addEventListener('mousedown', on_click_start);
-    document.addEventListener('mousemove', on_click_drag);
-    document.addEventListener('mouseup', on_click_end);
+    document.addEventListener('touchstart', on_touch_start, {passive: false});
+    document.addEventListener('touchmove', on_drag, {passive: false});
+    document.addEventListener('touchend', on_end);
+    document.addEventListener('mousedown', on_start);
+    document.addEventListener('mousemove', on_drag);
+    document.addEventListener('mouseup', on_end);
 
 }(window.drag_n_drop = window.drag_n_drop || {}));
