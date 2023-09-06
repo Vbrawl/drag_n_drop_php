@@ -141,7 +141,6 @@
     }
 
     async function on_drag(evt) {
-        console.log(evt);
         const pointer = evt.detail.pointer;
         if(pointer.storage.drag_n_drop) {
             evt.preventDefault();
@@ -151,7 +150,6 @@
 
             const objXStart = await on_drag_calculate_axis(pointer, 'x', locked_axis === 'x');
             const objYStart = await on_drag_calculate_axis(pointer, 'y', locked_axis === 'y');
-            // console.log(objXStart, objYStart);
             const objXEnd = objXStart + being_dragged.offsetWidth;
             const objYEnd = objYStart + being_dragged.offsetHeight;
 
