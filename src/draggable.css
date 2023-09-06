@@ -7,11 +7,15 @@
     position: absolute;
 
     width: min-content;
+    transition: transform var(--return-transition-length);
 }
 
+.drag-n-drop__draggable_pseudo.moving {
+    transform: scale(.9);
+}
 
 .drag-n-drop__draggable_pseudo.returning {
-    transition: top var(--return-transition-length), left var(--return-transition-length);
+    transition: transform var(--return-transition-length), top var(--return-transition-length), left var(--return-transition-length);
 }
 
 .drag-n-drop__placeholder[drag-n-drop-placeholder="false"] {

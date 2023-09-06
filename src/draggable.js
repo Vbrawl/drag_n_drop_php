@@ -133,7 +133,8 @@
                     pointer.storage.drag_n_drop.placeholder = await create_placeholder(draggable_object, draggable_object.getAttribute('drag-n-drop-placeholder') !== 'false');
                     pointer.storage.drag_n_drop.being_dragged = await create_draggable_pseudo(draggable_object, objX, objY, placeholder_id-1);
                 }
-
+                pointer.storage.drag_n_drop.being_dragged.getBoundingClientRect(); // Force update of the object. Basically force enable the animation of moving class.
+                pointer.storage.drag_n_drop.being_dragged.classList.add('moving');
                 pointer.storage.drag_n_drop.locked_axis = draggable_object.getAttribute('drag-n-drop-lock-axis');
                 pointer.storage.drag_n_drop.dragged_over = [];
             }
@@ -204,10 +205,12 @@
 
     async function on_end(evt) {
         const pointer = evt.detail.pointer;
-        const draggable_pseudo = pointer.storage.drag_n_drop.being_dragged;
-        const placeholder_obj = pointer.storage.drag_n_drop.placeholder;
-
-        if(draggable_pseudo) {
+        
+        if(pointer.storage.drag_n_drop) {
+            const draggable_pseudo = pointer.storage.drag_n_drop.being_dragged;
+            const placeholder_obj = pointer.storage.drag_n_drop.placeholder;
+            draggable_pseudo.classList.remove('moving');
+            
             const drag_end_event = create_on_drag_end_event(draggable_pseudo, placeholder_obj);
             const drop_event = create_on_drop_event(draggable_pseudo, placeholder_obj);
             draggable_pseudo.dispatchEvent(drag_end_event);
