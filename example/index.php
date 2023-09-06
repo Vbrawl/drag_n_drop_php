@@ -1,4 +1,7 @@
-<?php require_once('../main.php'); ?>
+<?php
+chdir('..');
+require_once('main.php');
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
