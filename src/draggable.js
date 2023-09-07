@@ -13,6 +13,7 @@
     // drag-n-drop-x-padding = "<num>" => A number representing a padding (in pixels) before detecting a collision. (Default: 0)
     // drag-n-drop-y-padding = "<num>" => A number representing a padding (in pixels) before detecting a collision. (Default: 0)
     // drag-n-drop-placeholder = "false" => "false": disable placeholder, "<any other value>"(DEFAULT): Enable placeholder
+    // drag-n-drop-returnAnimationId = "<num>" => A number representing the ID of the timeout for the transition when object is returning.
 
     var placeholder_id = 0;
     const return_transition_length = 200; // ms
@@ -71,13 +72,20 @@
                 obj = obj.parentElement;
             }
 
-            if(obj !== document.documentElement) return {width: obj.offsetWidth, height: obj.offsetHeight, x: obj.offsetLeft, y: obj.offsetTop};
+            if(obj !== document.documentElement) return obj.getBoundingClientRect();
         }
+
+        const width = Math.max(window.innerWidth, document.documentElement.offsetWidth);
+        const height = Math.max(window.innerHeight, document.documentElement.offsetHeight);
         return {
-            width: Math.max(window.innerWidth, document.documentElement.innerWidth),
-            height: Math.max(window.innerHeight, document.documentElement.innerHeight),
+            width: width,
+            height: height,
             x: 0,
-            y: 0
+            y: 0,
+            left: 0,
+            top: 0,
+            right: width,
+            bottom: height
         };
     }
 
@@ -92,12 +100,8 @@
             const colXPadding = parseInt(colenobj.getAttribute('drag-n-drop-x-padding')) || 0;
             const colYPadding = parseInt(colenobj.getAttribute('drag-n-drop-y-padding')) || 0;
 
-            const colXStart = colenobj.offsetLeft + colXPadding;
-            const colXEnd = colenobj.offsetLeft + colenobj.offsetWidth - colXPadding;
-            const colYStart = colenobj.offsetTop + colYPadding;
-            const colYEnd = colenobj.offsetTop + colenobj.offsetHeight - colYPadding;
-
-            if((objXStart < colXEnd && objXEnd > colXStart) && (objYStart < colYEnd && objYEnd > colYStart)) {
+            const rect = colenobj.getBoundingClientRect();
+            if((objXStart < (rect.right - colXPadding) && objXEnd > (rect.left + colXPadding)) && (objYStart < (rect.bottom - colYPadding) && objYEnd > (rect.top + colYPadding))) {
                 collisions.push(colenobj);
             }
         }
@@ -117,26 +121,32 @@
             if(!drag_start_event.defaultPrevented) {
                 const parent = draggable_object.parentElement;
                 const pointerobj = pointer.object;
+                var rect = null;
 
                 pointer.storage.drag_n_drop = {};
                 if(parent.classList.contains('drag-n-drop__draggable_pseudo')) {
-                    pointer.storage.drag_n_drop.offset = {x: parent.offsetLeft - pointerobj.pageX, y: parent.offsetTop - pointerobj.pageY};
+                    const animationId = parent.getAttribute('drag-n-drop-returnAnimationId');
+                    if(animationId) {
+                        clearTimeout(animationId);
+                        parent.classList.remove('returning');
+                    }
+                    rect = parent.getBoundingClientRect();
                     pointer.storage.drag_n_drop.being_dragged = parent;
                     pointer.storage.drag_n_drop.container = get_container_object(pointer.storage.being_dragged);
                     pointer.storage.drag_n_drop.placeholder = document.querySelector('div.drag-n-drop__placeholder[placeholder-id="'+parent.getAttribute('placeholder-id')+'"]');
                 } else {
-                    const objX = draggable_object.offsetLeft;
-                    const objY = draggable_object.offsetTop;
-
-                    pointer.storage.drag_n_drop.offset = {x: objX - pointerobj.pageX, y: objY - pointerobj.pageY};
+                    rect = draggable_object.getBoundingClientRect();
                     pointer.storage.drag_n_drop.container = get_container_object(draggable_object);
                     pointer.storage.drag_n_drop.placeholder = await create_placeholder(draggable_object, draggable_object.getAttribute('drag-n-drop-placeholder') !== 'false');
-                    pointer.storage.drag_n_drop.being_dragged = await create_draggable_pseudo(draggable_object, objX, objY, placeholder_id-1);
+                    pointer.storage.drag_n_drop.being_dragged = await create_draggable_pseudo(draggable_object, rect.left, rect.top, placeholder_id-1);
                 }
-                pointer.storage.drag_n_drop.being_dragged.getBoundingClientRect(); // Force update of the object. Basically force enable the animation of moving class.
-                pointer.storage.drag_n_drop.being_dragged.classList.add('moving');
+                pointer.storage.drag_n_drop.offset = {x: rect.left - pointerobj.pageX, y: rect.top - pointerobj.pageY};
                 pointer.storage.drag_n_drop.locked_axis = draggable_object.getAttribute('drag-n-drop-lock-axis');
                 pointer.storage.drag_n_drop.dragged_over = [];
+
+                // Animation
+                pointer.storage.drag_n_drop.being_dragged.getBoundingClientRect(); // Force update of the object. Basically force enable the animation of moving class.
+                pointer.storage.drag_n_drop.being_dragged.classList.add('moving');
             }
         }
     }
@@ -184,22 +194,20 @@
     }
 
     async function on_drag_calculate_axis(pointer, axis, locked) {
+        const axisX = axis === 'x';
+
         const being_dragged = pointer.storage.drag_n_drop.being_dragged;
-        if(locked) return (axis === 'x' ? being_dragged.offsetLeft : being_dragged.offsetTop);
+        if(locked) return (axisX ? being_dragged.offsetLeft : being_dragged.offsetTop);
         const container = pointer.storage.drag_n_drop.container;
         const pointerobj = pointer.object;
 
         const offset = pointer.storage.drag_n_drop.offset[axis];
-        const document_start = (axis === 'x') ? container.x : container.y;
-        const document_length = (axis === 'x') ? container.x + container.width - being_dragged.offsetWidth : container.y + container.height - being_dragged.offsetHeight;
-        var position = offset + (axis === 'x' ? pointerobj.pageX : pointerobj.pageY);
+        const boundary_start = (axisX ? container.left : container.top);
+        const boundary_end = (axisX ? container.right - being_dragged.offsetWidth: container.bottom - being_dragged.offsetHeight);
+        const position = offset + (axisX ? pointerobj.pageX : pointerobj.pageY);
 
-        if(position < document_start) {
-            position = document_start;
-        } else if (position > document_length) {
-            position = document_length;
-        }
-
+        if(position < boundary_start) return boundary_start;
+        if (position > boundary_end) return boundary_end;
         return position;
     }
 
@@ -214,7 +222,7 @@
             const drag_end_event = create_on_drag_end_event(draggable_pseudo, placeholder_obj);
             const drop_event = create_on_drop_event(draggable_pseudo, placeholder_obj);
             draggable_pseudo.dispatchEvent(drag_end_event);
-            
+
             var collisions = await get_collisions(draggable_pseudo.offsetLeft, draggable_pseudo.offsetLeft + draggable_pseudo.offsetWidth, draggable_pseudo.offsetTop, draggable_pseudo.offsetTop + draggable_pseudo.offsetHeight);
             for (let i = 0; i < collisions.length; i++) {
                 collisions[i].dispatchEvent(drop_event);
@@ -226,12 +234,14 @@
                 draggable_pseudo.classList.add('returning');
                 draggable_pseudo.style.top = (placeholder_display) ? placeholder_obj.offsetTop + 'px' : placeholder_obj.style.top;
                 draggable_pseudo.style.left = (placeholder_display) ? placeholder_obj.offsetLeft + 'px' : placeholder_obj.style.left;
-                setTimeout(() => {
+                const animationId = setTimeout(() => {
                     var parent = placeholder_obj.parentElement;
                     parent.insertBefore(draggable_pseudo.children[0], placeholder_obj);
                     placeholder_obj.remove();
                     draggable_pseudo.remove();
                 }, return_transition_length);
+
+                draggable_pseudo.setAttribute('drag-n-drop-returnAnimationId', animationId);
             }
         }
     }
