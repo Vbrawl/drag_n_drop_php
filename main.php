@@ -9,7 +9,7 @@ namespace DRAG_N_DROP {
 
     function load_draggable() {
         \MULTI_DEVICE_SUPPORT\enable_all();
-        load_file(DRAG_N_DROP_RESOURCES_PATH.'/src/draggable.css');
-        load_file(DRAG_N_DROP_RESOURCES_PATH.'/src/draggable.js', 'defer');
+        load_file(DRAG_N_DROP_RESOURCES_PATH.'/draggable.css');
+        load_file(DRAG_N_DROP_RESOURCES_PATH.'/draggable.js', 'defer');
     }
 }
