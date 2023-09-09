@@ -1,6 +1,7 @@
 <?php
 
-
+// Added "src" as resource folder to avoid manually loading the scripts
+// via PHP
 namespace DRAG_N_DROP {
     require_once('relocation.php');
 
@@ -8,7 +9,7 @@ namespace DRAG_N_DROP {
 
     function load_draggable() {
         \MULTI_DEVICE_SUPPORT\enable_all();
-        load_file(DRAG_N_DROP_PATH.'/src/draggable.css');
-        load_file(DRAG_N_DROP_PATH.'/src/draggable.js', 'defer');
+        load_file(DRAG_N_DROP_RESOURCES_PATH.'/src/draggable.css');
+        load_file(DRAG_N_DROP_RESOURCES_PATH.'/src/draggable.js', 'defer');
     }
 }
