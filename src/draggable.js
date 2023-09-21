@@ -101,7 +101,7 @@
             const colYPadding = parseInt(colenobj.getAttribute('drag-n-drop-y-padding')) || 0;
 
             const rect = colenobj.getBoundingClientRect();
-            if((objXStart < (rect.right - colXPadding) && objXEnd > (rect.left + colXPadding)) && (objYStart < (rect.bottom - colYPadding) && objYEnd > (rect.top + colYPadding))) {
+            if((objXStart < (rect.right - colXPadding + window.scrollX) && objXEnd > (rect.left + colXPadding + window.scrollX)) && (objYStart < (rect.bottom - colYPadding + window.scrollY) && objYEnd > (rect.top + colYPadding + window.scrollY))) {
                 collisions.push(colenobj);
             }
         }
@@ -138,9 +138,9 @@
                     rect = draggable_object.getBoundingClientRect();
                     pointer.storage.drag_n_drop.container = get_container_object(draggable_object);
                     pointer.storage.drag_n_drop.placeholder = await create_placeholder(draggable_object, draggable_object.getAttribute('drag-n-drop-placeholder') !== 'false');
-                    pointer.storage.drag_n_drop.being_dragged = await create_draggable_pseudo(draggable_object, rect.left, rect.top, placeholder_id-1);
+                    pointer.storage.drag_n_drop.being_dragged = await create_draggable_pseudo(draggable_object, rect.left + window.scrollX, rect.top + window.scrollY, placeholder_id-1);
                 }
-                pointer.storage.drag_n_drop.offset = {x: rect.left - pointerobj.pageX, y: rect.top - pointerobj.pageY};
+                pointer.storage.drag_n_drop.offset = {x: rect.left - pointerobj.pageX - window.scrollX, y: rect.top - pointerobj.pageY - window.scrollY};
                 pointer.storage.drag_n_drop.locked_axis = draggable_object.getAttribute('drag-n-drop-lock-axis');
                 pointer.storage.drag_n_drop.dragged_over = [];
 
@@ -203,8 +203,8 @@
 
         const offset = pointer.storage.drag_n_drop.offset[axis];
         const boundary_start = (axisX ? container.left : container.top);
-        const boundary_end = (axisX ? container.right - being_dragged.offsetWidth: container.bottom - being_dragged.offsetHeight);
-        const position = offset + (axisX ? pointerobj.pageX : pointerobj.pageY);
+        const boundary_end = (axisX ? container.right - being_dragged.offsetWidth + window.scrollX: container.bottom - being_dragged.offsetHeight + window.scrollY);
+        const position = offset + (axisX ? pointerobj.pageX + window.scrollX : pointerobj.pageY + window.scrollY);
 
         if(position < boundary_start) return boundary_start;
         if (position > boundary_end) return boundary_end;
