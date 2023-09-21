@@ -7,6 +7,7 @@
      *      draggable: Object can be dragged by the user. (When this option is used, the object can also receive dropzone events such as drag-n-drop__drop).
      *      dropzone: Object only receives dropzone events (such as drag-n-drop__drop).
      *      container: Object doesn't allow any items inside it to move out of it's boundaries.
+     *      undraggable-area: Object cannot be dragged from an element with drag-n-drop set to undraggable-area (It's the safe area to click without moving the object).
      */
 
     // drag-n-drop-lock-axis = "|x|y" => ""(DEFAULT): disabled, x: lock X axis, y: lock Y axis.
@@ -57,22 +58,28 @@
 
     function get_draggable_element(obj) {
         if(obj) {
-            while(obj.getAttribute('drag-n-drop') !== 'draggable' && obj !== document.documentElement) {
+            var attribute = obj.getAttribute('drag-n-drop');
+            while(attribute !== 'draggable' && attribute !== 'undraggable-area' && obj !== document.documentElement) {
                 obj = obj.parentElement;
+                attribute = obj.getAttribute('drag-n-drop');
             }
 
-            if(obj !== document.documentElement) return obj;
+            console.log(obj);
+
+            if(obj !== document.documentElement && attribute !== 'undraggable-area') return obj;
         }
         return null;
     }
 
     function get_container_object(obj) {
         if(obj) {
-            while(obj.getAttribute('drag-n-drop') !== 'container' && obj !== document.documentElement) {
+            var attribute = obj.getAttribute('drag-n-drop');
+            while(attribute !== 'container' && attribute !== 'undraggable-area' && obj !== document.documentElement) {
                 obj = obj.parentElement;
+                attribute = obj.getAttribute('drag-n-drop');
             }
 
-            if(obj !== document.documentElement) return obj.getBoundingClientRect();
+            if(obj !== document.documentElement && attribute !== 'undraggable-area') return obj.getBoundingClientRect();
         }
 
         const width = Math.max(window.innerWidth, document.documentElement.offsetWidth);
@@ -90,7 +97,7 @@
     }
 
     async function get_collisions(objXStart, objXEnd, objYStart, objYEnd) {
-        var collision_enabled_objects = document.querySelectorAll('*[drag-n-drop]:not([drag-n-drop="false"])');
+        var collision_enabled_objects = document.querySelectorAll('*[drag-n-drop]:not([drag-n-drop="false"]):not([drag-n-drop="undraggable-area"])');
         var collisions = [];
 
         for (let i = 0; i < collision_enabled_objects.length; i++) {
@@ -114,7 +121,6 @@
         const draggable_object = get_draggable_element(pointer.object.target);
         if(draggable_object) {
             evt.preventDefault();
-
             const drag_start_event = create_on_drag_start_event();
             draggable_object.dispatchEvent(drag_start_event);
 
