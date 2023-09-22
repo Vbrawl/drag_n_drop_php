@@ -1,6 +1,6 @@
 {
     "project_name": "drag_n_drop",
-    "project_version": "1.0.2",
+    "project_version": "1.0.3",
     "project_url": "https://github.com/vbrawl/drag_n_drop_php",
     "project_requirements": {
         "multi_device_support": "https://github.com/vbrawl/multi_device_support_php"

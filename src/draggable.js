@@ -241,8 +241,10 @@
                 draggable_pseudo.style.top = (placeholder_display) ? placeholder_obj.offsetTop + 'px' : placeholder_obj.style.top;
                 draggable_pseudo.style.left = (placeholder_display) ? placeholder_obj.offsetLeft + 'px' : placeholder_obj.style.left;
                 const animationId = setTimeout(() => {
-                    var parent = placeholder_obj.parentElement;
-                    parent.insertBefore(draggable_pseudo.children[0], placeholder_obj);
+                    const parent = placeholder_obj.parentElement;
+                    if(parent !== null) {
+                        parent.insertBefore(draggable_pseudo.children[0], placeholder_obj);
+                    }
                     placeholder_obj.remove();
                     draggable_pseudo.remove();
                 }, return_transition_length);
@@ -283,5 +285,9 @@
     document.addEventListener('nds-pointmove', on_drag);
     document.addEventListener('nds-longtouchend', on_end);
     document.addEventListener('nds-clickend', on_end);
+
+    drag_n_drop.end = async function(evt) {
+        return await on_end(evt);
+    }
 
 }(window.drag_n_drop = window.drag_n_drop || {}));
