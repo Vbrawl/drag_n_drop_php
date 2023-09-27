@@ -64,8 +64,6 @@
                 attribute = obj.getAttribute('drag-n-drop');
             }
 
-            console.log(obj);
-
             if(obj !== document.documentElement && attribute !== 'undraggable-area') return obj;
         }
         return null;
