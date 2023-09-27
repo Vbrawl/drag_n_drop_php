@@ -236,10 +236,11 @@
 
             if(!drag_end_event.defaultPrevented && !drop_event.defaultPrevented) {
                 const placeholder_display = placeholder_obj.getAttribute('drag-n-drop-placeholder') !== 'false';
+                const placeholder_rect = placeholder_obj.getBoundingClientRect();
 
                 draggable_pseudo.classList.add('returning');
-                draggable_pseudo.style.top = (placeholder_display) ? placeholder_obj.offsetTop + 'px' : placeholder_obj.style.top;
-                draggable_pseudo.style.left = (placeholder_display) ? placeholder_obj.offsetLeft + 'px' : placeholder_obj.style.left;
+                draggable_pseudo.style.top = (placeholder_display) ? placeholder_rect.top + 'px' : placeholder_obj.style.top;
+                draggable_pseudo.style.left = (placeholder_display) ? placeholder_rect.left + 'px' : placeholder_obj.style.left;
                 const animationId = setTimeout(() => {
                     const parent = placeholder_obj.parentElement;
                     if(parent !== null) {
