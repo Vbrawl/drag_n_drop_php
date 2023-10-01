@@ -10,6 +10,7 @@ namespace DRAG_N_DROP {
     $LOADED = false;
 
     function load_draggable() {
+        global $LOADED;
         if(!$LOADED) {
             \MULTI_DEVICE_SUPPORT\enable_all();
             load_file(DRAG_N_DROP_RESOURCES_PATH.'/draggable.css');
